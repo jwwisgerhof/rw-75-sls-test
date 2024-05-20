@@ -1,0 +1,65 @@
+service: rdm-v2-api
+
+useDotenv: true
+
+plugins:
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-2
+  memorySize: 2048
+  timeout: 29
+  stackTags:
+    source: serverless
+    name: UQRDM Backend API
+  tags:
+    name: UQRDM Backend API
+  lambdaHashingVersion: 20201221 # https://www.serverless.com/framework/docs/deprecations/#LAMBDA_HASHING_VERSION_V2
+  vpc:
+    securityGroupIds:
+      - sg-080a8560e6be49503
+    subnetIds:
+      - subnet-027ee7fdb36872f1d
+      - subnet-02f57a580425a2e23
+      - subnet-0f5fefd519ea37004
+  environment:
+    API_URL: ${env:API_URL}
+
+custom:
+  stage: '${opt:stage, self:provider.stage}'
+  customDomain:
+    basePath: '${self:custom.stage}'
+    domainName: api.rdm.uq.edu.au
+    stage: ${self:custom.stage}
+    createRoute53Record: true
+    endPointType: 'regional'
+
+package:
+  individually: true
+  patterns:
+    - "!node_modules/.prisma/client/libquery_engine-*"
+    - "node_modules/.prisma/client/libquery_engine-rhel-*"
+    - "!node_modules/prisma/libquery_engine-*"
+    - "!node_modules/@prisma/engines/**"
+
+functions:
+  graphql:
+    name: rdm-v2-${self:custom.stage}-graphql
+    package:
+      artifact: dist/zipball/graphql.zip
+    handler: graphql.handler
+    events:
+      - http:
+          method: ANY
+          path: /graphql
+  hello:
+    name: rdm-v2-${self:custom.stage}-hello
+    package:
+      artifact: dist/zipball/hello.zip
+    handler: hello.handler
+    events:
+      - http:
+          method: ANY
+          path: /hello

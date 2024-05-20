@@ -1,1 +1,3 @@
-# rw-75-sls-test
+# README
+Test project in redwoodjs
+
